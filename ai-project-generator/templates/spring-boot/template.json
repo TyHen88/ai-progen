@@ -1,0 +1,10 @@
+{
+  "name": "spring-boot",
+  "displayName": "Spring Boot Starter",
+  "description": "Spring Boot 3.4+ REST API starter with JPA and PostgreSQL",
+  "variables": [
+    { "name": "PROJECT_NAME", "description": "Artifact ID / project name", "required": true },
+    { "name": "PACKAGE_NAME", "description": "Java package name, e.g. com.example.myapp", "required": true, "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$" },
+    { "name": "DB_NAME", "description": "Database name", "required": true }
+  ]
+}

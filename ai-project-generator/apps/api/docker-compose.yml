@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=aiprogen_db
+      - DB_USER=aiprogen
+      - DB_PASS=aiprogen_secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: aiprogen_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: aiprogen_db
+      POSTGRES_USER: aiprogen
+      POSTGRES_PASSWORD: aiprogen_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: aiprogen_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: ai-project-generator-worker
+  profiles:
+    active: dev
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+ai:
+  default-provider: gemini
+  timeout: 30000
+  max-tokens: 4096
+  temperature: 0.7
+
+queue:
+  stream-name: generation-jobs
+  consumer-group: worker-group
+
+generator:
+  # Ephemeral per-job workspace, cleaned up after archiving. See generated/AGENT.md.
+  workspace-dir: ./generated
+
+templates:
+  # Relative to this service's own working directory (apps/worker/ when run via bootRun) —
+  # two levels up reaches the monorepo root, then into templates/. Override with an absolute
+  # path in any deployment where that assumption doesn't hold (e.g. a container image).
+  root-dir: ../../templates
+
+storage:
+  archive-output-dir: ./storage/archives

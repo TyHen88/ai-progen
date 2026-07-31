@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Gradle / Java build output
+.gradle/
+build/
+bin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Ephemeral generation output (see generated/AGENT.md)
+generated/*
+!generated/AGENT.md
+
+# Local file storage (see storage/AGENT.md)
+storage/uploads/*
+storage/archives/*
+storage/cache/*
+!storage/**/AGENT.md
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/*
+!.vscode/AGENT.md
