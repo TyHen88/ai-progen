@@ -24,9 +24,9 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=creator_copilot
-      - DB_USER=postgres
-      - DB_PASS=psql@ty8080
+      - DB_NAME=aiprogen_db
+      - DB_USER=aiprogen
+      - DB_PASS=aiprogen_secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -37,11 +37,11 @@ services:
     image: postgres:16-alpine
     container_name: aiprogen_postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
-      POSTGRES_DB: creator_copilot
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: psql@ty8080
+      POSTGRES_DB: aiprogen_db
+      POSTGRES_USER: aiprogen
+      POSTGRES_PASSWORD: aiprogen_secret
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

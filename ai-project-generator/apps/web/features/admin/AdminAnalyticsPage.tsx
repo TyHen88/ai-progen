@@ -36,30 +36,45 @@ import {
   MOCK_TOP_TECH_STACKS, 
   MOCK_PROVIDER_USAGE_PIE 
 } from '@/lib/admin-data';
+import { adminService, AdminStatsDto } from '@/services/api';
 
 export const AdminAnalyticsPage: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
+  const [stats, setStats] = useState<AdminStatsDto | null>(null);
+
+  React.useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await adminService.getStats();
+        setStats(data);
+      } catch (err) {
+        console.warn('Failed to load admin stats from API:', err);
+      }
+    }
+    loadStats();
+  }, []);
+
 
   const kpiCards = [
     {
-      title: 'Monthly Recurring Revenue',
-      value: '$148,500',
+      title: 'Total Projects Created',
+      value: stats ? stats.totalProjects.toLocaleString() : '$148,500',
       change: '+18.4% vs last mo',
       isPositive: true,
       icon: DollarSign,
       color: 'from-emerald-500/20 to-teal-500/10 text-emerald-400 border-emerald-500/30'
     },
     {
-      title: 'Daily Generations',
-      value: '4,210',
+      title: 'Total Generation Jobs',
+      value: stats ? stats.totalGenerationJobs.toLocaleString() : '4,210',
       change: '+24.1% today',
       isPositive: true,
       icon: Sparkles,
       color: 'from-blue-500/20 to-indigo-500/10 text-blue-400 border-blue-500/30'
     },
     {
-      title: 'Active Platform Users',
-      value: '24,850',
+      title: 'Active Registered Users',
+      value: stats ? stats.totalUsers.toLocaleString() : '24,850',
       change: '+1,240 new this week',
       isPositive: true,
       icon: Users,

@@ -1,5 +1,7 @@
 export type NavItem = 
   | 'landing'
+  | 'login'
+  | 'register'
   | 'dashboard'
   | 'generator'
   | 'templates'

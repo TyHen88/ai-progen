@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS generation_jobs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Seed Initial Starter Data
+-- Seed Initial Starter Data (Admin Email: admin@aiprogen.io | Password: Password123!)
 INSERT INTO users (id, email, password_hash, full_name, role, credits)
-VALUES ('usr_admin_001', 'admin@aiprogen.io', '$2a$10$wN3M7n/9E6Q2.0e7w1gH3.RzN4Wq9Z5F3K7a9b0c2d4e6f8a0b2c4', 'System Admin', 'ROLE_ADMIN', 9999)
+VALUES ('usr_admin_001', 'admin@aiprogen.io', '$2a$10$W23ZUX1Ykovp680daBqAs.kk7MS7Q/HrwjfS24VuJnVUOjPuZi4iO', 'System Admin', 'ROLE_ADMIN', 9999)
 ON CONFLICT (email) DO NOTHING;

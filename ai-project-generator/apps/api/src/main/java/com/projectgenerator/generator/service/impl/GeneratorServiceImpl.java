@@ -1,15 +1,18 @@
 package com.projectgenerator.generator.service.impl;
 
 import com.projectgenerator.common.exception.BusinessException;
+import com.projectgenerator.common.exception.ErrorCode;
 import com.projectgenerator.generator.dto.GenerateProjectRequest;
 import com.projectgenerator.generator.dto.GenerationJobDto;
 import com.projectgenerator.generator.entity.GenerationJobEntity;
 import com.projectgenerator.generator.repository.GenerationJobRepository;
 import com.projectgenerator.generator.service.GeneratorService;
+import com.projectgenerator.security.SecurityUtils;
+import com.projectgenerator.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,25 +20,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * This service only enqueues generation work now — apps/worker (a separate process) does the
- * actual AI/template/archive/storage pipeline, consuming the stream this class produces to.
- * See .ai/architecture/system.md and .ai/memory/changelog.md (2026-07-31, "Backend: full
- * completion pass") for why this moved out of an in-process @Async method.
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GeneratorServiceImpl implements GeneratorService {
 
+    private static final int GENERATION_CREDIT_COST = 10;
+
     private final GenerationJobRepository jobRepository;
+    private final UserRepository userRepository;
     private final StringRedisTemplate redisTemplate;
 
     @Value("${queue.stream-name:generation-jobs}")
     private String streamName;
 
     @Override
+    @Transactional
     public GenerationJobDto startGeneration(GenerateProjectRequest request, String userId) {
-        String jobId = "job_" + UUID.randomUUID();
+        // 1. Atomic Credit Check & Deduction
+        int updatedRows = userRepository.deductCredits(userId, GENERATION_CREDIT_COST);
+        if (updatedRows == 0) {
+            log.warn("User {} has insufficient credits (cost: {})", userId, GENERATION_CREDIT_COST);
+            throw new BusinessException(ErrorCode.INSUFFICIENT_CREDITS, "Insufficient credits. Generating a project requires " + GENERATION_CREDIT_COST + " credits.");
+        }
+
+        // 2. Persist Generation Job in Database
+        String jobId = UUID.randomUUID().toString();
 
         GenerationJobEntity job = GenerationJobEntity.builder()
                 .id(jobId)
@@ -51,7 +61,14 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         GenerationJobEntity saved = jobRepository.save(job);
 
-        redisTemplate.opsForStream().add(streamName, toStreamFields(saved));
+        // 3. Publish to Redis Stream with Fail-Safe Transaction Rollback
+        try {
+            redisTemplate.opsForStream().add(streamName, toStreamFields(saved));
+            log.info("Successfully enqueued job {} for user {} to stream {}", jobId, userId, streamName);
+        } catch (Exception ex) {
+            log.error("Failed to publish job {} to Redis Stream {}", jobId, streamName, ex);
+            throw new BusinessException(ErrorCode.QUEUE_ENQUEUE_FAILED, "Failed to enqueue project generation task into job queue");
+        }
 
         return mapToDto(saved);
     }
@@ -80,10 +97,9 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     private GenerationJobEntity findOwnedJobOrThrow(String jobId, String userId) {
         GenerationJobEntity job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new BusinessException("Generation job not found: " + jobId, HttpStatus.NOT_FOUND));
-        if (!job.getUserId().equals(userId)) {
-            throw new BusinessException("You do not have access to this generation job", HttpStatus.FORBIDDEN);
-        }
+                .orElseThrow(() -> new BusinessException(ErrorCode.JOB_NOT_FOUND, "Generation job not found: " + jobId));
+
+        SecurityUtils.validateOwnership(job.getUserId(), userId);
         return job;
     }
 

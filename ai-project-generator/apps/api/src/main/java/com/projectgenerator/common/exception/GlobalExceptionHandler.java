@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleBusinessException(BusinessException ex) {
         return ResponseEntity
                 .status(ex.getStatus())
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), ex.getErrorCode()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -35,8 +36,9 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.<Map<String, String>>builder()
                         .success(false)
                         .message("Validation failed")
+                        .errorCode(ErrorCode.INVALID_INPUT.getCode())
                         .data(errors)
-                        .timestamp(java.time.Instant.now())
+                        .timestamp(Instant.now())
                         .build());
     }
 
@@ -44,6 +46,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage()));
+                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage(), ErrorCode.INTERNAL_SERVER_ERROR.getCode()));
     }
 }

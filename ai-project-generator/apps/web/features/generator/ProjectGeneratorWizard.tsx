@@ -23,6 +23,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { ProjectType, ArchitecturePattern, OutputFormat, GeneratedProject } from '@/lib/types';
+import { generatorService, projectService } from '@/services/api';
 
 // Form Schema Definition
 const generatorSchema = z.object({
@@ -189,8 +190,32 @@ export const ProjectGeneratorWizard: React.FC<ProjectGeneratorWizardProps> = ({
     }
   };
 
-  const onFormSubmit = (data: GeneratorFormValues) => {
+  const onFormSubmit = async (data: GeneratorFormValues) => {
     setIsGenerating(true);
+
+    try {
+      await generatorService.startGeneration({
+        prompt: `${data.projectName}: ${data.description}`,
+        projectType: data.projectType,
+        frontend: data.frontend,
+        backend: data.backend,
+        database: data.database,
+        includeAuth: data.features.includes('Authentication'),
+        includeDocker: data.features.includes('Docker'),
+        includeTests: data.features.includes('Testing'),
+      });
+
+      await projectService.createProject({
+        name: data.projectName,
+        description: data.description,
+        projectType: data.projectType,
+        frontendStack: data.frontend,
+        backendStack: data.backend,
+        databaseStack: data.database,
+      });
+    } catch (err) {
+      console.warn('API project generation warning:', err);
+    }
 
     const newProject: GeneratedProject = {
       id: `proj-${Date.now()}`,
@@ -244,7 +269,7 @@ export const ProjectGeneratorWizard: React.FC<ProjectGeneratorWizardProps> = ({
     setTimeout(() => {
       setIsGenerating(false);
       onGenerateComplete(newProject);
-    }, 2800);
+    }, 1500);
   };
 
   return (

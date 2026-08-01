@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.projectgenerator.common.annotation.RateLimit;
+
 @RestController
 @RequestMapping("/api/v1/generator")
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class GeneratorController {
     private final GeneratorService generatorService;
 
     @PostMapping("/generate")
+    @RateLimit(limit = 10, windowSeconds = 60) // Max 10 generation requests per minute per client
     @Operation(summary = "Start AI Project Generation", description = "Submit a prompt to start background AI project generation pipeline")
     public ResponseEntity<ApiResponse<GenerationJobDto>> generateProject(
             @Valid @RequestBody GenerateProjectRequest request,

@@ -1,18 +1,23 @@
 package com.projectgenerator.project.service.impl;
 
 import com.projectgenerator.common.exception.BusinessException;
+import com.projectgenerator.common.exception.ErrorCode;
 import com.projectgenerator.project.dto.CreateProjectRequest;
 import com.projectgenerator.project.dto.ProjectDto;
 import com.projectgenerator.project.entity.ProjectEntity;
 import com.projectgenerator.project.repository.ProjectRepository;
 import com.projectgenerator.project.service.ProjectService;
+import com.projectgenerator.security.SecurityUtils;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +27,38 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<ProjectDto> getProjects(String search, String projectType, Boolean isFavorite, Pageable pageable) {
+        Specification<ProjectEntity> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isBlank()) {
+                String searchLike = "%" + search.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), searchLike),
+                        cb.like(cb.lower(root.get("description")), searchLike)
+                ));
+            }
+
+            if (projectType != null && !projectType.isBlank()) {
+                predicates.add(cb.equal(root.get("projectType"), projectType.trim()));
+            }
+
+            if (isFavorite != null) {
+                predicates.add(cb.equal(root.get("isFavorite"), isFavorite));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return projectRepository.findAll(spec, pageable).map(this::mapToDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ProjectDto> getAllProjects() {
         return projectRepository.findAll().stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -33,7 +66,7 @@ public class ProjectServiceImpl implements ProjectService {
     public List<ProjectDto> getUserProjects(String userId) {
         return projectRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -82,21 +115,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public ProjectDto updateArchiveUrl(String id, String archiveUrl) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Project not found with id: " + id, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Project not found with id: " + id));
         project.setArchiveUrl(archiveUrl);
         return mapToDto(projectRepository.save(project));
     }
 
-    /**
-     * Loads a project and verifies it belongs to userId, so one user can never read/mutate
-     * another user's project by guessing its id (IDOR).
-     */
     private ProjectEntity findOwnedProjectOrThrow(String id, String userId) {
         ProjectEntity project = projectRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Project not found with id: " + id, HttpStatus.NOT_FOUND));
-        if (!project.getUserId().equals(userId)) {
-            throw new BusinessException("You do not have access to this project", HttpStatus.FORBIDDEN);
-        }
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Project not found with id: " + id));
+        SecurityUtils.validateOwnership(project.getUserId(), userId);
         return project;
     }
 

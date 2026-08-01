@@ -14,9 +14,11 @@ import {
   LogOut,
   Globe
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { NotificationsPopover } from '@/components/ui/Notifications';
 import { NotificationItem, NavItem } from '@/lib/types';
+import { useAuth } from '@/providers/AuthContext';
 
 interface HeaderProps {
   notifications: NotificationItem[];
@@ -35,8 +37,20 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   onNavigate
 }) => {
+  const router = useRouter();
   const { setTheme, isDark } = useTheme();
+  const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-colors">
@@ -124,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 border border-white dark:border-slate-800 shadow-xs flex items-center justify-center text-white text-xs font-bold">
-                JD
+                {getInitials(user?.fullName)}
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
@@ -138,8 +152,8 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <div className="absolute right-0 mt-2 w-56 z-50 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-2 text-xs">
                   <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
-                    <p className="font-bold text-slate-900 dark:text-slate-100">John Developer</p>
-                    <p className="text-slate-500 dark:text-slate-400 truncate">hentyna11@gmail.com</p>
+                    <p className="font-bold text-slate-900 dark:text-slate-100">{user?.fullName || 'Guest Developer'}</p>
+                    <p className="text-slate-500 dark:text-slate-400 truncate">{user?.email || 'guest@company.com'}</p>
                   </div>
                   <button
                     onClick={() => { setShowUserMenu(false); onNavigate('settings'); }}
@@ -155,16 +169,22 @@ export const Header: React.FC<HeaderProps> = ({
                     <ShieldCheck className="w-4 h-4 text-slate-400" />
                     API Credentials
                   </button>
-                  <button
-                    onClick={() => { setShowUserMenu(false); onNavigate('admin-analytics'); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition-colors cursor-pointer font-bold"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-rose-500" />
-                    Admin Console
-                  </button>
+                  {user?.role === 'ROLE_ADMIN' && (
+                    <button
+                      onClick={() => { setShowUserMenu(false); onNavigate('admin-analytics'); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition-colors cursor-pointer font-bold"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-rose-500" />
+                      Admin Console
+                    </button>
+                  )}
                   <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
                   <button
-                    onClick={() => setShowUserMenu(false)}
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      logout();
+                      router.push('/login');
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-left transition-colors cursor-pointer font-medium"
                   >
                     <LogOut className="w-4 h-4" />

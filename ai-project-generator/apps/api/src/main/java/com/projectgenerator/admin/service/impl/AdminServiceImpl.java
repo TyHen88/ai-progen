@@ -10,6 +10,7 @@ import com.projectgenerator.project.repository.ProjectRepository;
 import com.projectgenerator.user.entity.UserEntity;
 import com.projectgenerator.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Cacheable(value = "statsCache", unless = "#result == null")
     public AdminStatsDto getStats() {
         Map<String, Long> jobsByStatus = new HashMap<>();
         for (Object[] row : jobRepository.countGroupedByStatus()) {

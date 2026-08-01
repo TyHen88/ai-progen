@@ -6,7 +6,8 @@ import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { CommandPaletteModal, DeleteConfirmModal, ShareModal } from '@/components/ui/Dialogs';
 import { NavItem, GeneratedProject, TemplateItem, NotificationItem, DownloadHistoryItem } from '@/lib/types';
-import { INITIAL_PROJECTS, MOCK_TEMPLATES, MOCK_DOWNLOAD_HISTORY, MOCK_NOTIFICATIONS } from '@/lib/mock-data';
+import { projectService, templateService } from '@/services/api';
+import { mapProjectDtoToGeneratedProject, mapTemplateDtoToTemplateItem } from '@/lib/adapters';
 
 function getViewFromPathname(pathname: string): NavItem {
   if (pathname === '/dashboard') return 'dashboard';
@@ -28,10 +29,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentView = getViewFromPathname(pathname);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [projects, setProjects] = useState<GeneratedProject[]>(INITIAL_PROJECTS);
-  const [templates, setTemplates] = useState<TemplateItem[]>(MOCK_TEMPLATES);
-  const [downloadsHistory, setDownloadsHistory] = useState<DownloadHistoryItem[]>(MOCK_DOWNLOAD_HISTORY);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+  const [projects, setProjects] = useState<GeneratedProject[]>([]);
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [downloadsHistory, setDownloadsHistory] = useState<DownloadHistoryItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  React.useEffect(() => {
+    async function loadLayoutData() {
+      try {
+        const [projRes, tempRes] = await Promise.all([
+          projectService.getProjects({ page: 0, size: 50 }).catch(() => null),
+          templateService.getTemplates({ page: 0, size: 50 }).catch(() => null),
+        ]);
+        if (projRes && projRes.items) {
+          setProjects(projRes.items.map(mapProjectDtoToGeneratedProject));
+        }
+        if (tempRes && tempRes.items) {
+          setTemplates(tempRes.items.map(mapTemplateDtoToTemplateItem));
+        }
+      } catch (err) {
+        console.error('Failed to load layout data from API:', err);
+      }
+    }
+    loadLayoutData();
+  }, []);
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);

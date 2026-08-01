@@ -1,11 +1,14 @@
 package com.projectgenerator.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -14,12 +17,14 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtBlacklistService jwtBlacklistService;
     private final CustomUserDetailsService customUserDetailsService;
 
     @Override
@@ -31,9 +36,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                String email = jwtTokenProvider.getEmailFromToken(jwt);
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+            if (StringUtils.hasText(jwt) && !jwtBlacklistService.isBlacklisted(jwt) && jwtTokenProvider.validateToken(jwt)) {
+                Claims claims = jwtTokenProvider.getClaimsFromToken(jwt);
+                String email = claims.getSubject();
+                String userId = claims.get("userId", String.class);
+                String role = claims.get("role", String.class);
+
+                UserDetails userDetails;
+                if (StringUtils.hasText(userId) && StringUtils.hasText(role)) {
+                    // Fast path: In-memory Principal creation with ZERO database queries
+                    if (!role.startsWith("ROLE_")) {
+                        role = "ROLE_" + role;
+                    }
+                    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
+                    userDetails = new UserPrincipal(userId, email, "", email, authorities);
+                } else {
+                    // Fallback path for legacy tokens without embedded userId claim
+                    userDetails = customUserDetailsService.loadUserByUsername(email);
+                }
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails,

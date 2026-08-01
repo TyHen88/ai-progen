@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state: scaffold only, no code yet
 
-This repository currently contains **only planning/documentation files** — there is no `package.json`, `pom.xml`, `pnpm-workspace.yaml`, source code, or build tooling anywhere in the tree yet. Every directory under `ai-project-generator/` exists solely as an empty folder holding a single `AGENT.md` that describes what will eventually live there.
+This repository currently contains **only planning/documentation files** — there is no `package.json`, `pom.xml`, `pnpm-workspace.yaml`, source code, or build tooling anywhere in the tree yet. Every directory under `ai-project-generator/` exists solely as an empty folder holding a single `AGENTS.md` that describes what will eventually live there.
 
 **Practical implications:**
 - There are no build, lint, or test commands to run — none exist yet. Do not invent or assume commands (e.g. `pnpm build`, `mvn test`) are wired up; check for the relevant config file before relying on any tooling.
-- When asked to implement a feature, you are usually starting from zero for that area — check the directory's `AGENT.md` for the intended design first, then create the actual `package.json`/`pom.xml`/source files following that design.
+- When asked to implement a feature, you are usually starting from zero for that area — check the directory's `AGENTS.md` for the intended design first, then create the actual `package.json`/`pom.xml`/source files following that design.
 - `structure.md` (repo root) is the target directory layout the whole tree is being built toward.
 
-## Directory-level `AGENT.md` convention — read before working in a folder
+## Directory-level `AGENTS.md` convention — read before working in a folder
 
-This repo uses a convention where **almost every directory has its own `AGENT.md`** describing that directory's purpose, responsibilities, and rules. These are the source of truth for that area and are more specific than this file. Before creating or editing files in any subdirectory, read its local `AGENT.md` (and its parent's, if the subdirectory doesn't have one yet).
+This repo uses a convention where **almost every directory has its own `AGENTS.md`** describing that directory's purpose, responsibilities, and rules. These are the source of truth for that area and are more specific than this file. Before creating or editing files in any subdirectory, read its local `AGENTS.md` (and its parent's, if the subdirectory doesn't have one yet).
 
-Root guidance lives in `ai-project-generator/AGENT.md`.
+Root guidance lives in `ai-project-generator/AGENTS.md`.
 
-When you scaffold a new subdirectory that doesn't have code yet, follow the design already documented in its `AGENT.md` rather than improvising a different structure — the AGENT.md files across the tree already form a consistent plan (tech choices, naming, cross-package rules).
+When you scaffold a new subdirectory that doesn't have code yet, follow the design already documented in its `AGENTS.md` rather than improvising a different structure — the AGENTS.md files across the tree already form a consistent plan (tech choices, naming, cross-package rules).
 
 ## Project overview
 

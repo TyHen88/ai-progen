@@ -18,14 +18,27 @@ import {
   Tag
 } from 'lucide-react';
 import { TemplateItem } from '@/lib/types';
-import { MOCK_TEMPLATES } from '@/lib/mock-data';
+import { templateService } from '@/services/api';
+import { mapTemplateDtoToTemplateItem } from '@/lib/adapters';
 
 type AdminTemplateItem = TemplateItem & { status?: 'Published' | 'Draft' | 'Deprecated' };
 
 export const AdminTemplatesPage: React.FC = () => {
-  const [templates, setTemplates] = useState<AdminTemplateItem[]>(
-    MOCK_TEMPLATES.map(t => ({ ...t, status: t.isPopular ? 'Published' : 'Published' }))
-  );
+  const [templates, setTemplates] = useState<AdminTemplateItem[]>([]);
+
+  React.useEffect(() => {
+    async function loadAdminTemplates() {
+      try {
+        const res = await templateService.getTemplates({ page: 0, size: 50 });
+        if (res && res.items) {
+          setTemplates(res.items.map((t) => ({ ...mapTemplateDtoToTemplateItem(t), status: 'Published' })));
+        }
+      } catch (err) {
+        console.error('Failed to load admin templates from API:', err);
+      }
+    }
+    loadAdminTemplates();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   

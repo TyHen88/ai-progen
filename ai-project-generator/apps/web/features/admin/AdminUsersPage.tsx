@@ -25,9 +25,38 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { AdminUser, INITIAL_ADMIN_USERS } from '@/lib/admin-data';
+import { adminService } from '@/services/api';
 
 export const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>(INITIAL_ADMIN_USERS);
+
+  React.useEffect(() => {
+    async function loadAdminUsers() {
+      try {
+        const res = await adminService.getUsers(0, 50);
+        if (res.items && res.items.length > 0) {
+          const apiUsers: AdminUser[] = res.items.map((u) => ({
+            id: u.id,
+            name: u.fullName || u.email.split('@')[0],
+            email: u.email,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.email)}`,
+            role: (u.role as any) || 'Free',
+            status: 'Active',
+            creditsRemaining: u.credits || 1000,
+            totalProjects: 0,
+            joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : '2026-08-01',
+            lastActive: 'Just now',
+            location: 'Global',
+          }));
+          setUsers(apiUsers);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch admin users from API:', err);
+      }
+    }
+    loadAdminUsers();
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');

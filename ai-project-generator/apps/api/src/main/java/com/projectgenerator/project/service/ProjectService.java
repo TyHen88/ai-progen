@@ -2,10 +2,14 @@ package com.projectgenerator.project.service;
 
 import com.projectgenerator.project.dto.CreateProjectRequest;
 import com.projectgenerator.project.dto.ProjectDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface ProjectService {
+
+    Page<ProjectDto> getProjects(String search, String projectType, Boolean isFavorite, Pageable pageable);
 
     List<ProjectDto> getAllProjects();
 
@@ -19,9 +23,5 @@ public interface ProjectService {
 
     void deleteProject(String id, String userId);
 
-    /**
-     * Internal-only — not exposed via any controller. Called by the generator pipeline right
-     * after it has actually built and stored an archive for a project it just created.
-     */
     ProjectDto updateArchiveUrl(String id, String archiveUrl);
 }

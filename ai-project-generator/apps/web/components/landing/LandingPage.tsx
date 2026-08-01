@@ -31,6 +31,7 @@ import {
   Server
 } from 'lucide-react';
 import { NavItem } from '@/lib/types';
+import { useAuth } from '@/providers/AuthContext';
 
 interface LandingPageProps {
   onNavigate: (view: NavItem) => void;
@@ -69,6 +70,7 @@ const itemVariants: Variants = {
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onQuickStartPrompt }) => {
+  const { user, isAuthenticated, logout } = useAuth();
   // Hero interactive prompt state
   const [heroPrompt, setHeroPrompt] = useState(
     'Build an AI CRM using Next.js, Spring Boot, PostgreSQL, Docker, and Clean Architecture.'
@@ -129,12 +131,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, onQuickSta
           transition={{ duration: 0.5 }}
           className="flex items-center gap-3"
         >
-          <button
-            onClick={() => onNavigate('dashboard')}
-            className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition-colors hidden sm:block cursor-pointer"
-          >
-            Dashboard
-          </button>
+          {isAuthenticated ? (
+            <>
+              <span className="hidden lg:inline-block text-xs font-medium text-slate-300">
+                Hi, <strong className="text-white">{user?.fullName?.split(' ')[0] || 'User'}</strong>
+              </span>
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => logout()}
+                className="px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 transition-colors hidden sm:block cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => onNavigate('login')}
+                className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => onNavigate('register')}
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-bold text-xs transition-colors hidden sm:block cursor-pointer"
+              >
+                Create Account
+              </button>
+            </>
+          )}
+
           <button
             onClick={() => onNavigate('generator')}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs transition-all shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center gap-2"

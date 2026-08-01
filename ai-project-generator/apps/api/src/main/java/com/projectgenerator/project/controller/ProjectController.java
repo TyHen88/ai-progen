@@ -1,19 +1,22 @@
 package com.projectgenerator.project.controller;
 
 import com.projectgenerator.common.response.ApiResponse;
+import com.projectgenerator.common.response.PageResponse;
 import com.projectgenerator.project.dto.CreateProjectRequest;
 import com.projectgenerator.project.dto.ProjectDto;
 import com.projectgenerator.project.service.ProjectService;
 import com.projectgenerator.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/projects")
@@ -24,10 +27,15 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    @Operation(summary = "List All Projects", description = "Fetch list of all generated projects")
-    public ResponseEntity<ApiResponse<List<ProjectDto>>> getAllProjects() {
-        List<ProjectDto> projects = projectService.getAllProjects();
-        return ResponseEntity.ok(ApiResponse.success(projects, "Projects retrieved successfully"));
+    @Operation(summary = "List Projects (Paginated & Filtered)", description = "Fetch paginated, sorted, and filtered list of projects")
+    public ResponseEntity<ApiResponse<PageResponse<ProjectDto>>> getProjects(
+            @Parameter(description = "Search term by name or description") @RequestParam(required = false) String search,
+            @Parameter(description = "Filter by project type") @RequestParam(required = false) String projectType,
+            @Parameter(description = "Filter by favorite status") @RequestParam(required = false) Boolean isFavorite,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        PageResponse<ProjectDto> response = PageResponse.of(projectService.getProjects(search, projectType, isFavorite, pageable));
+        return ResponseEntity.ok(ApiResponse.success(response, "Projects retrieved successfully"));
     }
 
     @GetMapping("/{id}")

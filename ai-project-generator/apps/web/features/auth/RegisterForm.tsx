@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 import { AuthCard } from './AuthCard';
+import { useAuth } from '@/providers/AuthContext';
 
 export const RegisterForm: React.FC = () => {
   const router = useRouter();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,18 +17,31 @@ export const RegisterForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await register({ fullName: name, email, password });
       router.push('/dashboard');
-    }, 600);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create account. Email might already be in use.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,6 +53,13 @@ export const RegisterForm: React.FC = () => {
       footerLinkHref="/login"
     >
       <form onSubmit={handleSubmit} className="space-y-3.5">
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* Full Name Field */}
         <div className="space-y-1">
           <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">

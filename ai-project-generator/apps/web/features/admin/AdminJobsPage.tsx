@@ -14,9 +14,37 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { AdminJob, INITIAL_ADMIN_JOBS } from '@/lib/admin-data';
+import { adminService } from '@/services/api';
 
 export const AdminJobsPage: React.FC = () => {
   const [jobs, setJobs] = useState<AdminJob[]>(INITIAL_ADMIN_JOBS);
+
+  React.useEffect(() => {
+    async function loadAdminJobs() {
+      try {
+        const res = await adminService.getJobs(0, 50);
+        if (res.items && res.items.length > 0) {
+          const apiJobs: AdminJob[] = res.items.map((j) => ({
+            id: j.jobId,
+            name: `Job: ${j.prompt ? j.prompt.slice(0, 30) : 'Project Gen'}...`,
+            service: j.projectType || 'Generator Service',
+            schedule: 'On-Demand',
+            status: j.status === 'COMPLETED' ? 'Idle' : j.status === 'FAILED' ? 'Failed' : 'Running',
+            lastRun: j.createdAt ? new Date(j.createdAt).toLocaleTimeString() : 'Recently',
+            nextRun: 'N/A',
+            cpuUsage: j.progressPercentage || 100,
+            memUsage: 128,
+            successRate: j.status === 'COMPLETED' ? 100 : j.status === 'FAILED' ? 0 : 95,
+          }));
+          setJobs(apiJobs);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch admin jobs from API:', err);
+      }
+    }
+    loadAdminJobs();
+  }, []);
+
 
   const handleToggleJob = (id: string) => {
     setJobs(prev => prev.map(j => j.id === id ? { ...j, status: j.status === 'Running' ? 'Paused' : 'Running' } : j));
