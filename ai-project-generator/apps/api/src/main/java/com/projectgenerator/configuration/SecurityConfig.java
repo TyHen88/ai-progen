@@ -37,34 +37,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Public Health Check, Auth & OpenAPI endpoints
-                .requestMatchers(
-                    "/api/v1/health",
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/register",
-                    "/api/v1/auth/refresh",
-                    "/api/v1/auth/logout",
-                    "/api/v1/auth/remember-me/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-                // Admin Console endpoints require ROLE_ADMIN
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                // All other endpoints require a valid JWT
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Public Health Check, Auth & OpenAPI endpoints
+                        .requestMatchers(
+                                "/api/v1/health",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/remember-me/**",
+                                "/api/v1/storage/download/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html")
+                        .permitAll()
+                        // Admin Console endpoints require ROLE_ADMIN
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // All other endpoints require a valid JWT
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 

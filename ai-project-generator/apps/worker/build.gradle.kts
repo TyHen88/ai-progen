@@ -38,6 +38,9 @@ dependencies {
     // since we deliberately did not take the full web starter.
     implementation("org.springframework:spring-web")
 
+    // JSON processing for AI provider responses
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+
     // Archive packaging
     implementation("org.apache.commons:commons-compress:1.27.1")
     implementation("commons-io:commons-io:2.18.0")
